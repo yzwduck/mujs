@@ -67,6 +67,15 @@ static void emit(JF, int value)
 	emitraw(J, F, value);
 }
 
+static void lineno(JF, js_Ast *node)
+{
+	if (J->debug && F->lastline != node->line) {
+		F->lastline = node->line;
+		emit(J, F, OP_LINENO);
+		emitraw(J, F, node->line);
+	}
+}
+
 static int addfunction(JF, js_Function *value)
 {
 	if (F->funlen >= F->funcap) {
@@ -302,17 +311,20 @@ static void cassign(JF, js_Ast *exp)
 	switch (lhs->type) {
 	case EXP_IDENTIFIER:
 		cexp(J, F, rhs);
+		lineno(J, F, exp);
 		emitlocal(J, F, OP_SETLOCAL, OP_SETVAR, lhs->string);
 		break;
 	case EXP_INDEX:
 		cexp(J, F, lhs->a);
 		cexp(J, F, lhs->b);
 		cexp(J, F, rhs);
+		lineno(J, F, exp);
 		emit(J, F, OP_SETPROP);
 		break;
 	case EXP_MEMBER:
 		cexp(J, F, lhs->a);
 		cexp(J, F, rhs);
+		lineno(J, F, exp);
 		emitstring(J, F, OP_SETPROP_S, lhs->b->string);
 		break;
 	default:
@@ -403,6 +415,7 @@ static void cassignop(JF, js_Ast *exp, int opcode)
 	js_Ast *rhs = exp->b;
 	cassignop1(J, F, lhs);
 	cexp(J, F, rhs);
+	lineno(J, F, exp);
 	emit(J, F, opcode);
 	cassignop2(J, F, lhs, 0);
 }
@@ -458,6 +471,8 @@ static void cexp(JF, js_Ast *exp)
 {
 	int then, end;
 	int n;
+
+	lineno(J, F, exp);
 
 	switch (exp->type) {
 	case EXP_STRING: emitstring(J, F, OP_STRING, exp->string); break;
@@ -892,6 +907,8 @@ static void cstm(JF, js_Ast *stm)
 {
 	js_Ast *target;
 	int loop, cont, then, end;
+
+	lineno(J, F, stm);
 
 	switch (stm->type) {
 	case AST_FUNDEC:

@@ -759,6 +759,7 @@ void jsC_dumpfunction(js_State *J, js_Function *F)
 			ps(F->strtab[*p++]);
 			break;
 
+		case OP_LINENO:
 		case OP_CLOSURE:
 		case OP_INITLOCAL:
 		case OP_GETLOCAL:
