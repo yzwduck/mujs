@@ -281,6 +281,29 @@ static void Sp_trim(js_State *J)
 	js_pushlstring(J, s, e - s);
 }
 
+static void Sp_substr(js_State *J)
+{
+	const char *str = js_tostring(J, 0);
+	const char *ss, *ee;
+	int len = utflen(str);
+	int s = js_tointeger(J, 1);
+	int l = js_isdefined(J, 2) ? js_tointeger(J, 2) : len;
+
+	s = s < 0 ? 0 : s > len ? len : s;
+	int e = s + l;
+	e = e < 0 ? 0 : e > len ? len : e;
+
+	if (s < e) {
+		ss = js_utfidxtoptr(str, s);
+		ee = js_utfidxtoptr(ss, e - s);
+	} else {
+		ss = js_utfidxtoptr(str, e);
+		ee = js_utfidxtoptr(ss, s - e);
+	}
+
+	js_pushlstring(J, ss, ee - ss);
+}
+
 static void S_fromCharCode(js_State *J)
 {
 	unsigned int i, top = js_gettop(J);
@@ -678,6 +701,9 @@ void jsB_initstring(js_State *J)
 
 		/* ES5 */
 		jsB_propf(J, "trim", Sp_trim, 0);
+
+		/* None ECMA */
+		jsB_propf(J, "substr", Sp_substr, 2);
 	}
 	js_newcconstructor(J, jsB_String, jsB_new_String, 1);
 	{
